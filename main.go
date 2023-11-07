@@ -52,8 +52,8 @@ func (s *Scheduler) start() {
 
 func (w *Worker) ProcessRequest(task Task) Rep {
 	w.isworking = true
+	//time.Sleep(2 * time.Second) // 模拟异步工作
 	fmt.Printf(" Worker%d UserInfo: %s RequestInfo：%s\n", w.id, task.UserInfo, task.RequestInfo)
-	time.Sleep(2 * time.Second) // 模拟异步工作
 	w.isworking = false
 	return Rep{}
 }
@@ -61,7 +61,6 @@ func (w *Worker) ProcessRequest(task Task) Rep {
 func main() {
 	initTaskQueue()
 	s := initScheduler()
-
 	go func() {
 		for i := 1; i <= 10; i++ {
 			task := Task{
@@ -69,9 +68,10 @@ func main() {
 				RequestInfo: fmt.Sprintf(" %d", i),
 			}
 			TaskQueue <- task
+			time.Sleep(2 * time.Second)
 		}
 	}()
-	time.Sleep(2 * time.Second)
+	time.Sleep(10 * time.Second)
 	s.start()
 
 }
