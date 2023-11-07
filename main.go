@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-var TaskQueue = []Task{}
+var TaskQueue chan Task
 
 type Task struct {
 	UserInfo    string
@@ -39,18 +39,15 @@ func (s *Scheduler) start() {
 	for {
 		for _, worker := range s.WorkerPool.workers {
 			if !worker.isworking {
-				task := s.getTask()
-				go worker.ProcessRequest(task)
-				break
+				select {
+				case task := <-TaskQueue:
+					go worker.ProcessRequest(task)
+				default:
+					// 任务队列为空，暂时不分配任务
+				}
 			}
 		}
 	}
-}
-
-func (s *Scheduler) getTask() Task {
-	task := TaskQueue[0]
-	TaskQueue = TaskQueue[1:]
-	return task
 }
 
 func (w *Worker) ProcessRequest(task Task) Rep {
@@ -71,17 +68,16 @@ func main() {
 				UserInfo:    fmt.Sprintf(" %d", i),
 				RequestInfo: fmt.Sprintf(" %d", i),
 			}
-			TaskQueue = append(TaskQueue, task)
+			TaskQueue <- task
 		}
 	}()
 	time.Sleep(2 * time.Second)
-	fmt.Print(TaskQueue)
 	s.start()
 
 }
 
-func initTaskQueue() []Task {
-	TaskQueue = make([]Task, 0)
+func initTaskQueue() chan Task {
+	TaskQueue = make(chan Task, 0)
 	return TaskQueue
 }
 
