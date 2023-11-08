@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/CJ-cooper6/demo/task"
 	"github.com/CJ-cooper6/demo/worker"
+	"time"
 )
 
 type Scheduler struct {
@@ -35,8 +36,13 @@ func (s *Scheduler) Start() {
 			worker := s.WorkerPool.Workers[i]
 			select {
 			case <-worker.Isworking:
-				task := <-s.TaskQueue
-				go worker.ProcessRequest(task)
+				select {
+				case task := <-s.TaskQueue:
+					go worker.ProcessRequest(task)
+				default:
+					fmt.Printf("我睡一会")
+					time.Sleep(3 * time.Second)
+				}
 			default:
 				continue
 			}
