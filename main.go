@@ -37,7 +37,8 @@ type Scheduler struct {
 func (s *Scheduler) start() {
 	fmt.Printf("==============Scheduler 开始工作==============\n")
 	for {
-		for _, worker := range s.WorkerPool.workers {
+		for i := 0; i < len(s.WorkerPool.workers); i++ {
+			worker := s.WorkerPool.workers[i]
 			if !worker.isworking {
 				select {
 				case task := <-TaskQueue:
@@ -45,6 +46,8 @@ func (s *Scheduler) start() {
 				default:
 					// 任务队列为空，暂时不分配任务
 				}
+			} else {
+				fmt.Println("在工作啦！")
 			}
 		}
 	}
@@ -52,40 +55,23 @@ func (s *Scheduler) start() {
 
 func (w *Worker) ProcessRequest(task Task) Rep {
 	w.isworking = true
-	//time.Sleep(2 * time.Second) // 模拟异步工作
+	time.Sleep(5 * time.Second) // 模拟异步工作
 	fmt.Printf(" Worker%d UserInfo: %s RequestInfo：%s\n", w.id, task.UserInfo, task.RequestInfo)
 	w.isworking = false
 	return Rep{}
 }
 
-func main() {
-	initTaskQueue()
-	s := initScheduler()
-	go func() {
-		for i := 1; i <= 10; i++ {
-			task := Task{
-				UserInfo:    fmt.Sprintf(" %d", i),
-				RequestInfo: fmt.Sprintf(" %d", i),
-			}
-			TaskQueue <- task
-			time.Sleep(2 * time.Second)
-		}
-	}()
-	time.Sleep(10 * time.Second)
-	s.start()
-
-}
-
 func initTaskQueue() chan Task {
-	TaskQueue = make(chan Task, 0)
+	TaskQueue = make(chan Task, 5)
 	return TaskQueue
 }
 
-func initWorker(id int, host string, port string) Worker {
+func initWorker(id int, host string, port string, isworking bool) Worker {
 	return Worker{
-		id:   id,
-		host: host,
-		port: port,
+		id:        id,
+		host:      host,
+		port:      port,
+		isworking: isworking,
 	}
 }
 
@@ -93,9 +79,9 @@ func initWorkPool() WorkPool {
 	return WorkPool{
 		size: 2,
 		workers: []Worker{
-			initWorker(1, "127.0.0.1", "8080"),
-			initWorker(2, "127.0.0.1", "8081"),
-			initWorker(3, "127.0.0.1", "8082"),
+			initWorker(1, "127.0.0.1", "8080", false),
+			initWorker(2, "127.0.0.1", "8081", false),
+			//initWorker(3, "127.0.0.1", "8082", false),
 		},
 	}
 }
@@ -105,4 +91,20 @@ func initScheduler() Scheduler {
 		WorkerPool: initWorkPool(),
 		wg:         sync.WaitGroup{},
 	}
+}
+
+func main() {
+	initTaskQueue()
+	s := initScheduler()
+	go func() {
+		for i := 1; i <= 50; i++ {
+			task := Task{
+				UserInfo:    fmt.Sprintf(" %d", i),
+				RequestInfo: fmt.Sprintf(" %d", i),
+			}
+			TaskQueue <- task
+			//time.Sleep(2 * time.Second)
+		}
+	}()
+	s.start()
 }
