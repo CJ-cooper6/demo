@@ -7,7 +7,7 @@ import (
 )
 
 type Worker struct {
-	id        int
+	Id        int
 	host      string
 	port      string
 	Isworking chan struct{} //判断Worker是否工作，
@@ -20,7 +20,7 @@ type WorkPool struct {
 
 func InitWorker(id int, host string, port string) Worker {
 	w := Worker{
-		id:        id,
+		Id:        id,
 		host:      host,
 		port:      port,
 		Isworking: make(chan struct{}, 1),
@@ -42,8 +42,10 @@ func InitWorkPool() WorkPool {
 	}
 }
 func (w *Worker) ProcessRequest(task task.Task) task.Rep {
-	time.Sleep(3 * time.Second) // 模拟异步工作
-	fmt.Printf(" worker%d UserInfo: %s RequestInfo：%s\n", w.id, task.UserInfo, task.RequestInfo)
-	w.Isworking <- struct{}{}
+	defer func() {
+		w.Isworking <- struct{}{}
+	}()
+	time.Sleep(2 * time.Second) // 模拟异步工作
+	fmt.Printf(" worker%d UserInfo: %s RequestInfo：%s\n", w.Id, task.UserInfo, task.RequestInfo)
 	return struct{}{}
 }

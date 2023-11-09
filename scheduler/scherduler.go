@@ -36,13 +36,19 @@ func (s *Scheduler) Start() {
 			worker := s.WorkerPool.Workers[i]
 			select {
 			case <-worker.Isworking:
-				select {
-				case task := <-s.TaskQueue:
-					go worker.ProcessRequest(task)
-				default:
-					fmt.Printf("我睡一会")
-					time.Sleep(3 * time.Second)
+				innerLoop := true
+				for innerLoop {
+					select {
+					case task := <-s.TaskQueue:
+						go worker.ProcessRequest(task)
+						innerLoop = false
+
+					default:
+						fmt.Printf("%d 我睡一会\n", worker.Id)
+						time.Sleep(3 * time.Second)
+					}
 				}
+
 			default:
 				continue
 			}

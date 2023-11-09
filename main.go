@@ -7,5 +7,7 @@ import (
 func main() {
 	s := scheduler.InitScheduler()
 	go s.Producer()
+	//time.Sleep(1 * time.Second)
 	s.Start()
+
 }
